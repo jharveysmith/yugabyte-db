@@ -68,6 +68,7 @@ class ReleaseUtil(object):
         self.distribution_path = distribution_path
         self.force = force
         self.commit = commit or ReleaseUtil.get_head_commit_hash()
+        self.package_name = package_name
 
         base_version = None
         with open(os.path.join(self.repo, RELEASE_VERSION_FILE)) as version_file:
@@ -224,8 +225,8 @@ class ReleaseUtil(object):
             else:
                 system = distro.id() + distro.major_version()
 
-        release_file_name = "yugabyte-{}-{}-{}.tar.gz".format(
-            release_name, system, platform.machine().lower())
+        release_file_name = "{}-{}-{}-{}.tar.gz".format(
+            self.package_name, release_name, system, platform.machine().lower())
         return os.path.join(self.build_path, release_file_name)
 
     def generate_release(self) -> str:
