@@ -60,7 +60,7 @@ class ReleaseUtil(object):
         :param commit: the Git commit SHA1 to use. If not specified, it is autodetected.
         :param build_root: the build root directory corresponding to the build type.
         :param package_name: the name of the top-level section of yb_release_manifest.json, such as
-                             "all" or "cli", specifying the set of files to include.
+                             "yugabyte" or "yugabyte-client", specifying the set of files to include.
         """
         self.repo = repository
         self.build_type = build_type
@@ -233,7 +233,7 @@ class ReleaseUtil(object):
         """
         Generates a release package and returns the path to the release file.
         """
-        yugabyte_folder_prefix = "yugabyte-{}".format(self.base_version)
+        yugabyte_folder_prefix = "{}-{}".format(self.package_name, self.base_version)
         tmp_parent_dir = self.distribution_path + '.tmp_for_tar_gz'
         os.mkdir(tmp_parent_dir)
 

@@ -68,7 +68,7 @@ def main():
                              'debugging the release process.')
     parser.add_argument('--package_name',
                         default='yugabyte',
-                        help='Name of package to release ("yugabyte" or "yugabyte-cli").')
+                        help='Name of package to release ("yugabyte" or "yugabyte-client").')
     add_common_arguments(parser)
     args = parser.parse_args()
 

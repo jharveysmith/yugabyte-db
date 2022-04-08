@@ -47,7 +47,7 @@
     ],
     "www": ["www/*"]
   },
-  "yugabyte-cli": {
+  "yugabyte-client": {
     "%symlinks%": {
       "bin/ysqlsh": "../postgres/bin/ysqlsh"
     },
