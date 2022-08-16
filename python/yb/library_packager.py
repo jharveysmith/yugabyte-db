@@ -362,6 +362,8 @@ class LibraryPackager:
         postgres_elf_names_to_patch = []
 
         for seed_executable_glob in self.seed_executable_patterns:
+            if 'gobin' in seed_executable_glob:
+                continue
             glob_results = glob.glob(seed_executable_glob)
             if not glob_results:
                 raise RuntimeError("No files found matching the pattern '{}'".format(
