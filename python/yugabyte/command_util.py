@@ -140,9 +140,9 @@ def copy_deep(src: str, dst: str, create_dst_dir: bool = False) -> None:
     src_is_link = os.path.islink(src)
     dst_exists = os.path.lexists(dst)
     if src.startswith("http"):
-        logging.debug("Pulling {} to {} from the web".format(src, dest))
+        logging.debug("Pulling {} to {} from the web".format(src, dst))
         opener = urllib.request.URLopener()
-        opener.addheader('User-Agent', 'yugabyte')
+        opener.addheader(('User-Agent', 'yugabyte'))
         opener.retrieve(src, os.path.join(dst, os.path.basename(src)))
     elif os.path.isdir(src) and not src_is_link:
         logging.debug("Copying directory {} to {}".format(src, dst))
