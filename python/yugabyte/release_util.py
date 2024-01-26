@@ -163,7 +163,7 @@ class ReleaseUtil:
                                        "x86_64-Linux": "linux",
                                        "arm64-Darwin": "el8",
                                        "x86_64-Darwin": "linux"
-                                      }['-'.join([platform.machine(), platform.system()])])
+                                     }['-'.join([platform.machine(), platform.system()])])
         # Substitution for BUILD_ROOT.
         new_value = new_value.replace("$BUILD_ROOT", self.build_root)
         thirdparty_intrumentation = "uninstrumented"
