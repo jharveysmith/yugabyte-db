@@ -154,10 +154,16 @@ class ReleaseUtil:
         if thirdparty_prefix_match:
             new_value = os.path.join(get_thirdparty_dir(), thirdparty_prefix_match.group(1))
         # Substitution for ARCH.
-        new_value = new_value.replace("$ARCH", platform.machine())
+        new_value = new_value.replace("${ARCH}", platform.machine())
         # Substitution for YBCOS.  This doesn't map cleanly yet.
-        new_value = new_value.replace("$YBOS",
-                        {"aarch64": "el8", "x86_64": "linux", "arm64": "linux"}[platform.machine()])
+        # we don't provide Mac native binaries for YBC yet, so just include the linux package
+        # of the appropriate arch.
+        new_value = new_value.replace("${YBCOS}",
+                        {"aarch64-Linux": "el8",
+                         "x86_64-Linux": "linux",
+                         "arm64-Darwin": "el8",
+                         "x86_64-Darwin": "linux"
+                        }['-'.join([platform.machine(),platform.system()])])
         # Substitution for BUILD_ROOT.
         new_value = new_value.replace("$BUILD_ROOT", self.build_root)
         thirdparty_intrumentation = "uninstrumented"
