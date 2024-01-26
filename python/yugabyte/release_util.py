@@ -157,7 +157,7 @@ class ReleaseUtil:
         new_value = new_value.replace("$ARCH", platform.machine())
         # Substitution for YBCOS.  This doesn't map cleanly yet.
         new_value = new_value.replace("$YBOS",
-                                      {"aarch64": "el8", "x86_64": "linux"}[platform.machine()])
+                        {"aarch64": "el8", "x86_64": "linux", "arm64": "linux"}[platform.machine()])
         # Substitution for BUILD_ROOT.
         new_value = new_value.replace("$BUILD_ROOT", self.build_root)
         thirdparty_intrumentation = "uninstrumented"
