@@ -159,10 +159,10 @@ class ReleaseUtil:
         # we don't provide Mac native binaries for YBC yet, so just include the linux package
         # of the appropriate arch.
         new_value = new_value.replace("${YBCOS}",
-                                      { "aarch64-Linux": "el8",
-                                        "x86_64-Linux": "linux",
-                                        "arm64-Darwin": "el8",
-                                        "x86_64-Darwin": "linux"
+                                      {"aarch64-Linux": "el8",
+                                       "x86_64-Linux": "linux",
+                                       "arm64-Darwin": "el8",
+                                       "x86_64-Darwin": "linux"
                                       }['-'.join([platform.machine(), platform.system()])])
         # Substitution for BUILD_ROOT.
         new_value = new_value.replace("$BUILD_ROOT", self.build_root)
