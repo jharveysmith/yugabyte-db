@@ -147,8 +147,14 @@ class ReleaseUtil:
         - Replace $BUILD_ROOT with the actual build_root.
         - Replace $ARCH with the machine's arch (x86_64/aarch64)
         """
+        # Filter out lines that are platform specific
+        if old_value.startswith('Linux-only:') or old_value.startswith('Darwin-only:'):
+            if old_value.startswith('{}-only'.format(platform.system())):
+                new_value = old_value.split(':', maxsplit=1)[1]
+            else:
+                new_value = ''
         # Substitution for Java.
-        new_value = old_value.replace('${project.version}', self.java_project_version)
+        new_value = new_value.replace('${project.version}', self.java_project_version)
         # Substitution for thirdparty.
         thirdparty_prefix_match = THIRDPARTY_PREFIX_RE.match(new_value)
         if thirdparty_prefix_match:
