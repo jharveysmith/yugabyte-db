@@ -152,7 +152,7 @@ class ReleaseUtil:
             if old_value.startswith('{}-only'.format(platform.system())):
                 new_value = old_value.split(':', maxsplit=1)[1]
             else:
-                new_value = ''
+                return ''
         # Substitution for Java.
         new_value = new_value.replace('${project.version}', self.java_project_version)
         # Substitution for thirdparty.
