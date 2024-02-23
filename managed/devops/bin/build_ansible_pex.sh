@@ -27,10 +27,9 @@ fi
 
 echo "Rebuilding pex env for ansible."
 
-
 # Build pex docker image if doesn't exist.
 docker inspect "$DOCKER_PEX_IMAGE_NAME" > /dev/null 2>&1 || \
-docker build -t "$DOCKER_PEX_IMAGE_NAME" .
+  docker build -t "$DOCKER_PEX_IMAGE_NAME" --build-arg "BUILD_ARCH=$(uname -m)" .
 
 # Execute the build_pex.sh script inside the built docker image
 # to generate the repaired PEX.

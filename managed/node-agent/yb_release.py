@@ -10,15 +10,11 @@ import shutil
 import subprocess
 import tarfile
 
-from ybops.utils import init_env, log_message, get_default_release_version, get_release_file
+from ybops.utils import init_env, log_message, get_release_file
 from ybops.common.exceptions import YBOpsRuntimeError
 
 """This script packages the node agent binaries for all supported platforms.
 """
-
-# Supported platforms for node-agent.
-NODE_AGENT_PLATFORMS = set(["linux/amd64", "linux/arm64"])
-
 
 def filter_function(version, filename):
     exclude_folders = ["{}/devops/venv".format(version)]
@@ -30,51 +26,46 @@ def filter_function(version, filename):
 
 
 def get_release_version(source_dir):
-    version_metadata = os.path.join(source_dir, "version_metadata.json")
-    with open(version_metadata, 'r') as file:
-        data = file.read()
-    obj = json.loads(data)
-    version = obj.get('version_number')
-    if version is None:
-        log_message(logging.WARN, "Version number is not found in version_metadata.json.")
-        return get_default_release_version()
-    build_num = obj.get('build_number')
-    if build_num is None:
-        log_message(logging.WARN, "Build number is not found in version_metadata.json.")
-        return get_default_release_version()
-    version_format = "{}-b{}" if build_num.isdigit() else "{}-{}"
-    return version_format.format(version, build_num)
+    cp = subprocess.run(f"{os.environ['yb_devops_home']}/bin/yb_build_string.sh", check=True,
+                        shell=True, capture_output=True)
+    return str(cp.stdout.decode('utf-8').strip())
 
 
+targets = set(["linux/amd64", "linux/arm64"])
 parser = argparse.ArgumentParser()
 parser.add_argument('--source_dir', help='Source code directory.', required=True)
 parser.add_argument('--destination', help='Copy release to Destination directory.', required=True)
 parser.add_argument('--pre_release', help='Generate pre-release packages.', action='store_true')
-parser.add_argument('--include_pex', help='Include pex env for node agent',
-                    action='store_true')
+parser.add_argument('--include_pex', help='Include pex env for node agent', action='store_true')
+parser.add_argument('--target', help='Which architecture to build for', action='extend', nargs="+",
+                    type=str)
 args = parser.parse_args()
+if args.target:
+    targets = set(args.target)
+
+
+if args.pre_release:
+    devops_home = os.getenv('DEVOPS_HOME')
+    if not devops_home:
+        raise RunTimeError("DEVOPS_HOME ENV variable is required for pre_release builds")
+    if not os.path.exists(devops_home):
+        raise RunTimeError(f"DEVOPS_HOME is defined but does not exist: {devops_home}")
+
 
 try:
     init_env(logging.INFO)
     if not os.path.exists(args.destination):
         raise YBOpsRuntimeError("Destination {} not a directory.".format(args.destination))
 
-    version = get_release_version(args.source_dir)
+    version,v,b = get_release_version(args.source_dir).split()
+    with open('version_metadata.json', 'w') as f:
+        f.write(json.dumps({'version':v,'build':b}))
     build_script = os.path.join(args.source_dir, "build.sh")
-    process_env = os.environ.copy()
-    process_env["NODE_AGENT_PLATFORMS"] = ' '.join(NODE_AGENT_PLATFORMS)
-    subprocess.check_call([build_script, 'clean', 'build', 'package', version], env=process_env)
-    # Rebuild minimal pex for node agent.
-    if args.pre_release:
-        devops_home = os.getenv('DEVOPS_HOME')
-        if devops_home is None:
-            raise YBOpsRuntimeError("DEVOPS_HOME not found")
+    for platform in targets:
+        process_env = os.environ.copy()
+        process_env["NODE_AGENT_PLATFORMS"] = platform
+        subprocess.check_call([build_script, 'clean', 'build', 'package', version], env=process_env)
 
-        if args.include_pex:
-            logging.info("Rebuilding pex for node agent.")
-            build_pex_script = os.path.join(devops_home, "bin", "build_ansible_pex.sh")
-            subprocess.check_call([build_pex_script, '--force'])
-    for platform in NODE_AGENT_PLATFORMS:
         parts = platform.split("/")
         packaged_file = os.path.join(args.source_dir, "build",
                                      "node_agent-{}-{}-{}.tar.gz"
@@ -87,6 +78,9 @@ try:
             # Pre-release is for local testing only.
             release_file = packaged_file
             if args.include_pex:
+                logging.info("Rebuilding pex for node agent.")
+                build_pex_script = os.path.join(devops_home, "bin", "build_ansible_pex.sh")
+                subprocess.check_call([build_pex_script, '--force'])
                 repackaged_file = os.path.join(args.source_dir, "build",
                                                "node_agent-{}-{}-{}-repackaged.tar.gz"
                                                .format(version, parts[0], parts[1]))

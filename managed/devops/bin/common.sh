@@ -538,8 +538,14 @@ detect_os() {
   is_centos=false
 
   case $(uname) in
-    Darwin) is_mac=true ;;
-    Linux) is_linux=true ;;
+    Darwin)
+      is_mac=true
+      os_name='darwin'
+      ;;
+    Linux)
+      is_linux=true
+      os_name='linux'
+      ;;
     *)
       fatal "Unknown operating system: $(uname)"
   esac
@@ -555,6 +561,25 @@ detect_os() {
     # TODO: detect other Linux flavors, including potentially non-Ubuntu Debian distributions
     # (if we ever need it).
   fi
+  # Provide a lower-cased OS name
+  export os_name
+}
+
+detect_arch() {
+  arch_name=$(uname -m)
+  # some systems don't use the standard uname output for the arch name (docker, go).
+  case $arch_name in
+    x86_64)
+      alt_arch_name='amd64'
+      ;;
+    aarch64|arm64)
+      alt_arch_name='arm64'
+      ;;
+    *)
+      fatal "Unknown system arch: $(uname -m)"
+  esac
+  export arch_name
+  export alt_arch_name
 }
 
 # Function that is needed to activate the PEX environment. Note that using the PEX requires that
@@ -607,6 +632,7 @@ activate_pex() {
 # -------------------------------------------------------------------------------------------------
 
 detect_os
+detect_arch
 
 #
 # We should not load up ansible.env in all our shells scripts anymore! This should be automatically
@@ -618,6 +644,9 @@ detect_os
 export ANSIBLE_HOST_KEY_CHECKING=False
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
+export TARGET_NAME="${os_name}/${arch_name}"
+export ALT_TARGET_NAME="${os_name}/${alt_arch_name}"
+
 
 log_dir=$HOME/logs
 

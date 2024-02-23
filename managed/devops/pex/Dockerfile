@@ -1,6 +1,7 @@
 # Get the latest docker image
-FROM quay.io/pypa/manylinux2014_x86_64
-
+ARG BUILD_ARCH=
+FROM quay.io/pypa/manylinux2014_${BUILD_ARCH}
+ARG BUILD_ARCH
 # Perform general yum updates
 RUN yum --enablerepo=extras -y install epel-release python3-pip
 RUN pip3 install --upgrade pip
@@ -10,7 +11,7 @@ RUN pip3 install --upgrade pip
 # (if it requires third-party shared dependencies)
 
 # Install psycopg2==2.9.1 third-party shared dependencies
-RUN yum -y install postgresql-devel python3-devel gcc libcom_err.x86_64
+RUN yum -y install postgresql-devel python3-devel gcc libcom_err.${BUILD_ARCH}
 
 # Install python-ldap==3.3.1 third-party shared dependencies
 RUN yum -y install openldap-devel

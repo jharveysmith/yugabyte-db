@@ -3,6 +3,10 @@
 
 set -euo pipefail
 
+export DEVOPS_HOME="${BASH_SOURCE%/*}"/../devops
+
+. "$DEVOPS_HOME/bin/"/common.sh
+
 print_help() {
   cat <<-EOT
 Generates the node agent packages in destination.
@@ -14,20 +18,19 @@ Options:
     Directory into which the binary should be copied.
   -l, --local
     Generate pre-release packages in /opt/yugabyte/node-agent/releases.
+  -t, --target
+    Set the target platform (linux/amd64 or linux/arm64).  Default is ${ALT_TARGET_NAME}
   -p, --rebuild_pex
     Build ansible only pex for node agent.
 EOT
 }
 
-export DEVOPS_HOME="${BASH_SOURCE%/*}"/../devops
-
-. "$DEVOPS_HOME/bin/"/common.sh
-
 readonly node_agent_home=$( cd "${BASH_SOURCE%/*}" && pwd )
 
 destination=""
-local=""
+localbuild=false
 pre_release=""
+target="${ALT_TARGET_NAME}"
 include_pex=""
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -40,7 +43,11 @@ while [ $# -gt 0 ]; do
       shift
     ;;
     -l|--local)
-      local="true"
+      localbuild="true"
+    ;;
+    -t|--target)
+      target="$2"
+      shift
     ;;
     -p|--include_pex)
       include_pex="--include_pex"
@@ -49,7 +56,7 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-if [[ "$local" == "true" ]]; then
+if $localbuild; then
   pre_release="--pre_release"
   if [[ ! -d $destination ]]; then
     destination="/opt/yugabyte/node-agent/releases"
@@ -60,5 +67,6 @@ elif [[ ! -d $destination ]]; then
 fi
 
 activate_virtualenv
+set -x
 $node_agent_home/yb_release.py --source_dir $node_agent_home --destination $destination \
-                                                            $pre_release $include_pex
+                               $pre_release $include_pex --target "$target"

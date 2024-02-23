@@ -126,3 +126,6 @@ managed/src/main/java/com/yugabyte/yw/common/operator/io/*
 
 # jenv local version
 **/.java-version
+
+# version_metadata.json for node-agent is generated and not checked in
+managed/node-agent/version_metadata.json

@@ -50,7 +50,7 @@ setup_protoc() {
             protoc_os=osx
         fi
         local protoc_arch=$build_arch
-        if [ "$protoc_arch" = "arm64" ]; then
+        if [ "$protoc_arch" = "arm64" ] || [ "$protoc_arch" = "aarch64" ]; then
             protoc_arch=aarch_64
         fi
         popd
@@ -143,8 +143,6 @@ clean_build() {
     rm -rf "$grpc_output_dir"
 }
 
-
-
 format() {
     pushd "$project_dir"
     go install github.com/segmentio/golines@latest
@@ -183,6 +181,8 @@ package_for_platform() {
     local arch=$2
     local version=$3
     staging_dir_name="node_agent-${version}-${os}-${arch}"
+    local v=$(cut -d- -f1 <<<$version)
+    local b=$(cut -d- -f2 <<<$version)
     version_dir="${build_output_dir}/${staging_dir_name}/${version}"
     script_dir="${version_dir}/scripts"
     bin_dir="${version_dir}/bin"
@@ -201,7 +201,8 @@ package_for_platform() {
     cp -rf "$os_exec_name" "${bin_dir}/$exec_name"
     # Follow the symlinks.
     cp -Lf ../version.txt "${version_dir}"/version.txt
-    cp -Lf ../version_metadata.json "${version_dir}"/version_metadata.json
+    python -c "import json; print(json.dumps({'version_number': '${v}',
+              'build_number': '${b}'}))" > "${version_dir}"/version_metadata.json
     pushd "$project_dir/resources"
     cp -rf preflight_check.sh "${script_dir}"/preflight_check.sh
     cp -rf node-agent-installer.sh "${bin_dir}"/node-agent-installer.sh
