@@ -16,6 +16,7 @@ from ybops.common.exceptions import YBOpsRuntimeError
 """This script packages the node agent binaries for all supported platforms.
 """
 
+
 def filter_function(version, filename):
     exclude_folders = ["{}/devops/venv".format(version)]
     for exclude_folder in exclude_folders:
@@ -57,9 +58,9 @@ try:
     if not os.path.exists(args.destination):
         raise YBOpsRuntimeError("Destination {} not a directory.".format(args.destination))
 
-    version,v,b = get_release_version(args.source_dir).split()
+    version, v, b = get_release_version(args.source_dir).split()
     with open('version_metadata.json', 'w') as f:
-        f.write(json.dumps({'version':v,'build':b}))
+        f.write(json.dumps({'version': v, 'build': b}))
     build_script = os.path.join(args.source_dir, "build.sh")
     for platform in targets:
         process_env = os.environ.copy()
