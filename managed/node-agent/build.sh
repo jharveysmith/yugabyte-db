@@ -181,8 +181,16 @@ package_for_platform() {
     local arch=$2
     local version=$3
     staging_dir_name="node_agent-${version}-${os}-${arch}"
-    local v=$(cut -d- -f1 <<<$version)
-    local b=$(cut -d- -f2 <<<$version)
+    local delim
+    if grep -s '+' <<<${version} >/dev/null 2>&1; then
+      delim='+'
+    elif grep -s -- '-SHA' <<<${version} >/dev/null 2>&1; then
+      delim='-SHA'
+    else
+      delim='-b'
+    fi
+    local v=${d%${delim}*}
+    local b=${d#*${delim}}
     version_dir="${build_output_dir}/${staging_dir_name}/${version}"
     script_dir="${version_dir}/scripts"
     bin_dir="${version_dir}/bin"
