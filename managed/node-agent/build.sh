@@ -189,8 +189,8 @@ package_for_platform() {
     else
       delim='-b'
     fi
-    local v=${d%${delim}*}
-    local b=${d#*${delim}}
+    local v=${version%${delim}*}
+    local b=${version#*${delim}}
     version_dir="${build_output_dir}/${staging_dir_name}/${version}"
     script_dir="${version_dir}/scripts"
     bin_dir="${version_dir}/bin"
