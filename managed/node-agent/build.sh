@@ -211,7 +211,7 @@ package_for_platform() {
     cp -Lf ../version.txt "${version_dir}"/version.txt
     pwd
     echo "${version_dir}"/version_metadata.json
-    python -c "import json; print(json.dumps({'version_number': '${v}',
+    python3 -c "import json; print(json.dumps({'version_number': '${v}',
               'build_number': '${b}'}))" > "${version_dir}"/version_metadata.json
     pushd "$project_dir/resources"
     cp -rf preflight_check.sh "${script_dir}"/preflight_check.sh
