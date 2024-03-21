@@ -74,8 +74,8 @@ generate_golang_grpc_files() {
     if [[ ! -d "$grpc_output_dir" ]]; then
         mkdir -p "$grpc_output_dir"
     fi
-    protoc -I"$grpc_proto_dir" --go_out="$grpc_output_dir" --go-grpc_out="$grpc_output_dir"  \
-    --go-grpc_opt=require_unimplemented_servers=false $grpc_proto_files
+    protoc -I"$grpc_proto_dir" --go_out="$grpc_output_dir" --go-grpc_out="$grpc_output_dir" \
+      --go-grpc_opt=require_unimplemented_servers=false $grpc_proto_files
 }
 
 build_pymodule() {
@@ -84,7 +84,7 @@ build_pymodule() {
     fi
     pushd "$grpc_output_dir"
     python3 -m grpc_tools.protoc -I"$grpc_proto_dir" --python_out="$grpc_python_output_dir" \
-    --grpc_python_out="$grpc_python_output_dir" $grpc_proto_files
+      --grpc_python_out="$grpc_python_output_dir" $grpc_proto_files
     # Python does not support custom package. Workaround to change the package name.
     if [ "$build_os" = "darwin" ]; then
         sed -i "" -e 's/^import \(server_pb2.*\) as/from ybops.node_agent import \1 as/' \
@@ -209,6 +209,8 @@ package_for_platform() {
     cp -rf "$os_exec_name" "${bin_dir}/$exec_name"
     # Follow the symlinks.
     cp -Lf ../version.txt "${version_dir}"/version.txt
+    pwd
+    echo "${version_dir}"/version_metadata.json
     python -c "import json; print(json.dumps({'version_number': '${v}',
               'build_number': '${b}'}))" > "${version_dir}"/version_metadata.json
     pushd "$project_dir/resources"

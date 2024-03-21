@@ -67,14 +67,14 @@ try:
         process_env["NODE_AGENT_PLATFORMS"] = platform
         subprocess.check_call([build_script, 'clean', 'build', 'package', version], env=process_env)
 
-        parts = platform.split("/")
-        packaged_file = os.path.join(args.source_dir, "build",
-                                     "node_agent-{}-{}-{}.tar.gz"
-                                     .format(version, parts[0], parts[1]))
+        #parts = platform.split("/")
+        #packaged_file = os.path.join(args.source_dir, "build",
+        #                             "node_agent-{}-{}-{}.tar.gz"
+        #                             .format(version, parts[0], parts[1]))
         # Devops cannot parse names separated by dashes.
-        release_file = get_release_file(args.source_dir,
-                                        "node_agent", os_type=parts[0], arch_type=parts[1])
-        shutil.copyfile(packaged_file, release_file)
+        #release_file = get_release_file(args.source_dir,
+        #                                "node_agent", os_type=parts[0], arch_type=parts[1])
+        #shutil.copyfile(packaged_file, release_file)
         if args.pre_release:
             # Pre-release is for local testing only.
             release_file = packaged_file

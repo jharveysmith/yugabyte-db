@@ -15,10 +15,16 @@ fi
 
 if [[ -n $YB_RELEASE_BUILD_NUMBER ]]; then
   build="${YB_RELEASE_BUILD_NUMBER}"
-  joiner="${joiner}b"
+  # If we are using a - (non-semvar), then we add a 'b' before the build number
+  # In semvar, the build number follows immediately after the +
+  if [[ "${joiner}" == "-" ]]; then
+    joiner="${joiner}b"
+  fi
 else
+  # + is only used before a buildnumber.  If no build number if available we use the short SHA
+  # with a -
   build="$(git rev-parse --short HEAD)"
-  joiner="${joiner}SHA"
+  joiner="-SHA"
 fi
 
 echo ${version}${joiner}${build}
