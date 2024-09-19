@@ -2309,7 +2309,7 @@ activate_virtualenv() {
     virtualenv_dir+="-${YB_TARGET_ARCH}"
   fi
 
-  yb_activate_virtualenv "${virtualenv_dir}"
+  yb_activate_virtualenv "${virtualenv_parent_dir}"
 
 
   if [[ ${YB_DEBUG_VIRTUALENV:-0} == "1" ]]; then
