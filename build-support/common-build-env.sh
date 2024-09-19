@@ -195,10 +195,6 @@ if [[ -z ${is_run_test_script:-} ]]; then
 fi
 readonly is_run_test_script
 
-# Setting this to "true" will prevent any changes to the virtualenv (creating it or installing
-# modules into it) as part of activate_virtualenv.
-yb_readonly_virtualenv=false
-
 YB_NFS_DOWNLOAD_CACHE_DIR=${YB_NFS_DOWNLOAD_CACHE_DIR:-$YB_JENKINS_NFS_HOME_DIR/download_cache}
 
 readonly -a VALID_BUILD_TYPES=(
@@ -2305,100 +2301,16 @@ run_shellcheck() {
 
 activate_virtualenv() {
   detect_architecture
-
   local virtualenv_parent_dir=$YB_BUILD_PARENT_DIR
   local virtualenv_dir=$virtualenv_parent_dir/$YB_VIRTUALENV_BASENAME
 
   # On Apple Silicon, use separate virtualenv directories per architecture.
   if is_apple_silicon; then
-    detect_architecture
     virtualenv_dir+="-${YB_TARGET_ARCH}"
   fi
 
-  if [[ ${YB_RECREATE_VIRTUALENV:-} == "1" &&
-        -d $virtualenv_dir &&
-        ${yb_readonly_virtualenv} == "false" ]]; then
-    log "YB_RECREATE_VIRTUALENV is set, deleting virtualenv at '$virtualenv_dir'"
-    rm -rf "$virtualenv_dir"
-    # We don't want to be re-creating the virtual environment over and over again.
-    unset YB_RECREATE_VIRTUALENV
-  fi
+  yb_activate_virtualenv "${virtualenv_dir}"
 
-  if [[ ! -d $virtualenv_dir ]]; then
-    if [[ ${yb_readonly_virtualenv} == "true" ]]; then
-      fatal "virtualenv does not exist at '$virtualenv_dir', and we are not allowed to create it"
-    fi
-    if [[ -n ${VIRTUAL_ENV:-} && -f $VIRTUAL_ENV/bin/activate ]]; then
-      local old_virtual_env=$VIRTUAL_ENV
-      # Re-activate and deactivate the other virtualenv we're in. Otherwise the deactivate
-      # function might not even be present in our current shell. This is necessary because otherwise
-      # the --user installation below will fail.
-      set +eu
-      # shellcheck disable=SC1090,SC1091
-      . "$VIRTUAL_ENV/bin/activate"
-      deactivate
-      set -eu
-      # Not clear why deactivate does not do this.
-      remove_path_entry "$old_virtual_env/bin"
-    fi
-    # We need to be using system python to install the virtualenv module or create a new virtualenv.
-    (
-      mkdir -p "$virtualenv_parent_dir"
-      cd "$virtualenv_parent_dir"
-      local python3_interpreter=python3
-      local arch_prefix=""
-      if is_apple_silicon; then
-        # On Apple Silicon, use the system Python 3 interpreter. This is necessary because the
-        # Homebrew Python was upgraded to version 3.11 in April 2023, and setup.py fails for
-        # the typed-ast module.
-        python3_interpreter=/usr/bin/python3
-        arch_prefix="arch -${YB_TARGET_ARCH}"
-      fi
-
-      # Require Python version at least 3.7.
-      local python3_version
-      python3_version=$( "$python3_interpreter" -V )
-      if [ "$(echo "$python3_version" | cut -d. -f2)" -lt 7 ]; then
-        fatal "Python version too low: $python3_version"
-      fi
-
-      $arch_prefix "$python3_interpreter" -m venv "${virtualenv_dir##*/}"
-
-      # Validate the architecture of the virtualenv.
-      if [[ -n ${YB_TARGET_ARCH:-} ]]; then
-        local actual_python_arch
-        actual_python_arch=$(
-          "${virtualenv_dir}/bin/python3" -c "import platform; print(platform.machine())"
-        )
-        if [[ $actual_python_arch != "$YB_TARGET_ARCH" ]]; then
-          fatal "Failed to create virtualenv for $YB_TARGET_ARCH, got $actual_python_arch instead" \
-                "for virtualenv at $virtualenv_dir"
-        fi
-      fi
-    )
-  fi
-
-  set +u
-  # shellcheck disable=SC1090,SC1091
-  . "$virtualenv_dir"/bin/activate
-  set -u
-  local pip_no_cache=""
-  if [[ -n ${YB_PIP_NO_CACHE:-} ]]; then
-    pip_no_cache="--no-cache-dir"
-  fi
-
-  local pip_executable=pip3
-  if [[ ${yb_readonly_virtualenv} == "false" ]]; then
-    local requirements_file_path="$YB_SRC_ROOT/requirements_frozen.txt"
-    local installed_requirements_file_path=$virtualenv_dir/${requirements_file_path##*/}
-    "$pip_executable" --retries 0 install --upgrade pip
-    if ! cmp --silent "$requirements_file_path" "$installed_requirements_file_path"; then
-      run_with_retries 10 0.5 "$pip_executable" install -r "$requirements_file_path" \
-        $pip_no_cache
-    fi
-    # To avoid re-running pip install, save the requirements that we've installed in the virtualenv.
-    cp "$requirements_file_path" "$installed_requirements_file_path"
-  fi
 
   if [[ ${YB_DEBUG_VIRTUALENV:-0} == "1" ]]; then
     echo >&2 "
@@ -2793,8 +2705,6 @@ adjust_compiler_type_on_mac() {
 # -------------------------------------------------------------------------------------------------
 # Initialization
 # -------------------------------------------------------------------------------------------------
-
-detect_os
 
 # http://man7.org/linux/man-pages/man7/signal.7.html
 if is_mac; then
