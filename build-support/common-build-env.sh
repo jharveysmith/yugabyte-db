@@ -78,7 +78,6 @@ $YB_SRC_ROOT/python/yugabyte/split_long_command_line.py
 $YB_SRC_ROOT/python/yugabyte/update_test_result_xml.py
   export YB_SCRIPT_PATH_YB_RELEASE_CORE_DB=$YB_SRC_ROOT/python/yugabyte/yb_release_core_db.py
   export YB_SCRIPT_PATH_LIST_PACKAGED_TARGETS=$YB_SRC_ROOT/python/yugabyte/list_packaged_targets.py
-  export YB_SCRIPT_PATH_VALIDATE_BUILD_ROOT=$YB_SRC_ROOT/python/yugabyte/validate_build_root.py
   export YB_SCRIPT_PATH_ANALYZE_TEST_RESULTS=$YB_SRC_ROOT/python/yugabyte/analyze_test_results.py
 }
 
@@ -2044,13 +2043,12 @@ handle_predefined_build_root() {
     predefined_build_root=$( cd "$predefined_build_root" && pwd )
   fi
 
-  if [[ $predefined_build_root != $YB_BUILD_INTERNAL_PARENT_DIR/* && \
-        $predefined_build_root != $YB_BUILD_EXTERNAL_PARENT_DIR/* ]]; then
-    # Sometimes $predefined_build_root contains symlinks on its path.
-    "$YB_SCRIPT_PATH_VALIDATE_BUILD_ROOT" \
-      "$predefined_build_root" \
-      "$YB_BUILD_INTERNAL_PARENT_DIR" \
-      "$YB_BUILD_EXTERNAL_PARENT_DIR"
+  # Sometimes $predefined_build_root contains symlinks on its path.
+  if [[ $(realpath -q $predefined_build_root) != $(realpath -q $YB_BUILD_INTERNAL_PARENT_DIR)/* && \
+        $(realpath -q $predefined_build_root) != $(realpath -q $YB_BUILD_EXTERNAL_PARENT_DIR)/* ]]
+    then
+    fatal "Build root '$predefined_build_root' is not within either " \
+          "'$YB_BUILD_INTERNAL_PARENT_DIR' or '$YB_BUILD_EXTERNAL_PARENT_DIR'"
   fi
 
   local basename=${predefined_build_root##*/}
@@ -2304,10 +2302,15 @@ activate_virtualenv() {
   local virtualenv_parent_dir=$YB_BUILD_PARENT_DIR
   local virtualenv_dir=$virtualenv_parent_dir/$YB_VIRTUALENV_BASENAME
 
-  # On Apple Silicon, use separate virtualenv directories per architecture.
-  if is_apple_silicon; then
-    virtualenv_dir+="-${YB_TARGET_ARCH}"
-  fi
+  log "Activating python virtual env"
+
+  # Symlink the requirements files into the top level build directory
+  # We assume $YB_SRC_ROOT/build is already created by initialize_yugabyte_bash_common having
+  # already been called.
+  [[ -f "${YB_SRC_ROOT}/build/requirements.txt" ]] \
+    || ln -s "${YB_SRC_ROOT}/requirements.txt" "${YB_SRC_ROOT}/build/"
+  [[ -f "${YB_SRC_ROOT}/build/requirements_frozen.txt" ]] \
+    || ln -s "${YB_SRC_ROOT}/requirements_frozen.txt" "${YB_SRC_ROOT}/build/"
 
   yb_activate_virtualenv "${virtualenv_parent_dir}"
 
