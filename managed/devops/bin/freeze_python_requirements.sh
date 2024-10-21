@@ -29,30 +29,15 @@ if [[ ! ${1:-} =~ ^(-y|--yes)$ ]]; then
   fi
 fi
 
-delete_virtualenv
+cd "$yb_devops_home"
+export YB_VERBOSE=true
+export YB_RECREATE_VIRTUALENV=true
+rm -f "requirements_frozen.txt"
 activate_virtualenv
 
-cd "$yb_devops_home"
-
-log "There should be no pre-installed Python modules in the virtualenv"
-( set -x; run_pip list )
-
-log "Upgrading pip to latest version"
-(set -x; run_pip install --upgrade pip)
-
-log "Installing Python modules according to the ${REQUIREMENTS_FILE_NAME} file"
-( set -x; run_pip install -r "${REQUIREMENTS_FILE_NAME}" )
-
-log "Generating $FROZEN_REQUIREMENTS_FILE"
-
-# Use LANG=C to force case-sensitive sorting.
-# https://stackoverflow.com/questions/10326933/case-sensitive-sort-unix-bash
-( set -x; run_pip freeze --all | LANG=C sort >"$FROZEN_REQUIREMENTS_FILE" )
-
 log_empty_line
-log "Contents of $FROZEN_REQUIREMENTS_FILE:"
-cat "$FROZEN_REQUIREMENTS_FILE"
+log "Changes for $FROZEN_REQUIREMENTS_FILE"
+git diff "requirements_frozen.txt" | cat
+log_empty_line
+log "Requirements successfully frozen"
 
-# This will validate that exactly the right set of packages is installed, and install ybops.
-set -x
-"$yb_devops_home/bin/install_python_requirements.sh"

@@ -1,3 +1,4 @@
+# YB_SHA: a700566149c412b9d5df88e4385fe66f9640a91c33821f2c7e341f41f3f240e4
 adal==1.2.7
 ansible==9.2.0
 ansible-core==2.16.13
@@ -29,6 +30,7 @@ google-api-python-client==1.10.0
 googleapis-common-protos==1.66.0
 google-auth==1.19.2
 google-auth-httplib2==0.2.0
+googleapis-common-protos==1.65.0
 grpcio==1.65.4
 grpcio-tools==1.65.4
 httplib2==0.22.0
@@ -48,7 +50,6 @@ oauthlib==3.2.2
 ordered-set==4.0.2
 packaging==24.2
 paramiko==3.4.0
-pip==24.3.1
 portalocker==2.10.1
 protobuf==5.26.1
 psycopg2==2.9.10
@@ -68,7 +69,6 @@ resolvelib==1.0.1
 rsa==4.9
 s3transfer==0.10.3
 scp==0.14.5
-setuptools==72.2.0
 six==1.16.0
 typing_extensions==4.12.2
 uritemplate==3.0.1

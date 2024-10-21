@@ -23,6 +23,12 @@ if [[ $BASH_SOURCE == $0 ]]; then
   fatal "$BASH_SOURCE must be sourced, not invoked as a script"
 fi
 
+# Guard against multiple inclusions.
+if [[ -n ${YB_MANAGED_COMMON_ENV_SOURCED:-} ]]; then
+  # Return to the executing script.
+  return
+fi
+readonly YB_MANAGED_COMMON_ENV_SOURCED=1
 
 # -------------------------------------------------------------------------------------------------
 # Functions used when initializing constants
@@ -47,29 +53,63 @@ regex_from_list() {
   echo "^($regex)$"
 }
 
-set_python_executable() {
-  PYTHON_EXECUTABLE=""
-  executables=( "${PYTHON3_EXECUTABLES[@]}" )
+# Puts the current Git SHA1 in the current directory into the current_sha1 variable.
+# Remember, this variable could also be local to the calling function.
+get_current_sha1() {
+  current_sha1=$( git rev-parse HEAD )
+  if [[ ! $current_sha1 =~ ^[0-9a-f]{40}$ ]]; then
+    # We can't use the "fatal" function yet.
+    echo >&2 "Could not get current Git SHA1 in $PWD"
+    exit 1
+  fi
+}
 
-  for py_executable in "${executables[@]}"; do
-    if which "$py_executable" > /dev/null 2>&1; then
-      PYTHON_EXECUTABLE="$py_executable"
-      export PYTHON_EXECUTABLE
-      return
-    fi
-  done
-
-  if which python > /dev/null 2>&1; then
-    if python -c 'import sys; sys.exit(1) if sys.version_info[0] != 3 else sys.exit(0)';  then
-      PYTHON_EXECUTABLE="python"
-      export PYTHON_EXECUTABLE
-      return
-    fi
+# This is taken almost verbatim from common-build-env.sh, but with a few modifications for paths
+initialize_yugabyte_bash_common() {
+  local target_sha1
+  target_sha1=$(<"$YB_SRC_ROOT/build-support/yugabyte-bash-common-sha1.txt")
+  if [[ ! $target_sha1 =~ ^[0-9a-f]{40}$ ]]; then
+    echo >&2 "Invalid yugabyte-bash-common SHA1: $target_sha1"
+    exit 1
   fi
 
-  echo "Failed to find python executable."
-  exit 1
+  # Put this submodule-like directory under "build".
+  YB_BASH_COMMON_DIR=$YB_SRC_ROOT/build/yugabyte-bash-common
+
+  if [[ ! -d $YB_BASH_COMMON_DIR ]]; then
+    mkdir -p "$YB_SRC_ROOT/build"
+    git clone https://github.com/yugabyte/yugabyte-bash-common.git "$YB_BASH_COMMON_DIR"
+  fi
+
+  pushd "$YB_BASH_COMMON_DIR" >/dev/null
+  local current_sha1
+  get_current_sha1
+  if [[ $current_sha1 != "$target_sha1" ]]; then
+    if ! ( set -x; git checkout "$target_sha1" ); then
+      (
+        set -x
+        git fetch
+        git checkout "$target_sha1"
+      )
+    fi
+    get_current_sha1
+    if [[ $current_sha1 != "$target_sha1" ]]; then
+      echo >&2 "Failed to check out target SHA1 $target_sha1 in directory $PWD." \
+                "Current SHA1: $current_sha1."
+      exit 1
+    fi
+  fi
+  popd +0 >/dev/null
 }
+
+# If we ever decide we don't want to support building from source tarballs we could replace
+# this with 'git rev-parse --show-toplevel'
+YB_SRC_ROOT="$(cd "$( dirname "${BASH_SOURCE[0]}" )"/../../.. && pwd )"
+
+initialize_yugabyte_bash_common
+
+# shellcheck source=build/yugabyte-bash-common/src/yugabyte-bash-common.sh
+. "$YB_BASH_COMMON_DIR/src/yugabyte-bash-common.sh"
 
 # -------------------------------------------------------------------------------------------------
 # Constants
@@ -82,18 +122,13 @@ DOCKER_PEX_IMAGE_NAME="yba-devops-pex-builder"
 DOCKER_VENV_IMAGE_NAME="yba-devops-venv-builder"
 PYTHON_EXECUTABLE=""
 
-set_python_executable
 
 readonly yb_script_name=${0##*/}
 readonly yb_script_name_no_extension=${yb_script_name%.sh}
 
 readonly yb_devops_home=$( cd "${BASH_SOURCE%/*}"/.. && pwd )
-if [[ ! -d $yb_devops_home/roles ]]; then
+if [[ ! -d $yb_devops_home/roles ]];then
   fatal "No 'roles' subdirectory found inside yb_devops_home ('$yb_devops_home')"
-fi
-
-if [ -L /opt/yugabyte/devops ]; then
- export yb_devops_home_link="/opt/yugabyte/devops"
 fi
 
 # We need to export yb_devops_home because we rely on it in ansible.cfg.
@@ -119,8 +154,8 @@ set -u
 # Basename (i.e. name excluding the directory path) of our virtualenv.
 readonly YB_VIRTUALENV_BASENAME=venv
 readonly YB_PEXVENV_BASENAME=pexvenv
-readonly REQUIREMENTS_FILE_NAME="$yb_devops_home/python3_requirements.txt"
-readonly FROZEN_REQUIREMENTS_FILE="$yb_devops_home/python3_requirements_frozen.txt"
+readonly REQUIREMENTS_FILE_NAME="$yb_devops_home/requirements.txt"
+readonly FROZEN_REQUIREMENTS_FILE="$yb_devops_home/requirements_frozen.txt"
 readonly YB_PYTHON_MODULES_DIR="$yb_devops_home/python3_modules"
 readonly YB_PYTHON_MODULES_PACKAGE="$yb_devops_home/python3_modules.tar.gz"
 readonly YB_INSTALLED_MODULES_DIR="$yb_devops_home/python3_installed_modules"
@@ -135,47 +170,9 @@ readonly NODE_AGENT_SRC_DIR="$yb_devops_home/../node-agent"
 # Functions
 # -------------------------------------------------------------------------------------------------
 
-log_empty_line() {
-  echo >&2
-}
-
-log_warn() {
- local _log_level="warn"
- log "$@"
-}
-
-log_error() {
- local _log_level="error"
- log "$@"
-}
-
-# This just logs to stderr.
-log() {
-  BEGIN_COLOR='\033[0;32m'
-  END_COLOR='\033[0m'
-  GREEN='\033[0;32m'
-  RED='\033[0;31m'
-
-  case ${_log_level:-info} in
-    error)
-      BEGIN_COLOR='\033[0;31m'
-      shift
-      ;;
-    warn)
-      BEGIN_COLOR='\033[0;33m'
-      shift
-      ;;
-  esac
-  echo -e "${BEGIN_COLOR}[$( get_timestamp ) ${BASH_SOURCE[1]##*/}:${BASH_LINENO[0]} ${FUNCNAME[1]}]${END_COLOR}" $* >&2
-}
-
-fatal() {
-  log "$@"
-  exit 1
-}
-
-get_timestamp() {
-  date +%Y-%m-%d_%H_%M_%S
+# error doesn't exist in yugabyte-bash-common yet.
+error() {
+ log_with_color $RED_COLOR "$@"
 }
 
 ensure_log_dir_defined() {
@@ -191,7 +188,7 @@ ensure_log_dir_exists() {
 
 configure_standard_log_path() {
   ensure_log_dir_exists
-  log_path="$log_dir/${yb_script_name_no_extension}_$( get_timestamp ).log"
+  log_path="$log_dir/${yb_script_name_no_extension}_$( get_timestamp_for_filenames ).log"
   show_log_path "$log_path"
 }
 
@@ -209,19 +206,6 @@ show_log_path_in_the_end() {
 
 run_ybcloud() {
   ( set -x; "$devops_bin_dir/ybcloud.sh" "$@" )
-}
-
-heading() {
-  echo
-  echo --------------------------------------------------------------------------------------------
-  echo "$1"
-  echo --------------------------------------------------------------------------------------------
-  echo
-}
-
-get_current_timestamp()
-{
-  date +%Y-%m-%dT%H:%M:%S
 }
 
 deactivate_virtualenv() {
@@ -260,7 +244,6 @@ deactivate_virtualenv() {
 
     unset VIRTUAL_ENV
     unset PYTHONPATH
-    set_python_executable
   fi
 }
 
@@ -275,6 +258,8 @@ activate_virtualenv() {
     export SITE_PACKAGES="$YB_INSTALLED_MODULES_DIR"
     return
   fi
+
+  yb_activate_virtualenv "${yb_devops_home}"
 
   if [[ ! $virtualenv_dir = */$YB_VIRTUALENV_BASENAME ]]; then
     fatal "Internal error: virtualenv_dir ('$virtualenv_dir') must end" \
@@ -410,64 +395,11 @@ verbose_mkdir_p() {
 }
 
 run_pip() {
-  "$PYTHON_EXECUTABLE" -m pip "$@"
-}
-
-pip_install() {
-  local module_name=""
-  case $# in
-    1)
-      module_name="$1"
-      ;;
-    2)
-      if [[ ! -f $2 ]]; then
-        fatal "Python requirements file '$2' does not exist."
-      fi
-      if [[ $1 != "-r" ]]; then
-        fatal "The pip_install function expects -r as the first argument when given two" \
-              "arguments, got: $*"
-      fi
-      ;;
-    *)
-      fatal "The pip_install function takes 1 arg (module name) or 2 args (-r REQUIREMENT_FILE)"
-      ;;
-  esac
-
   if is_virtual_env; then
-    log "Installing Python module(s) inside virtualenv."
-    (
-      verbose_cmd run_pip install "$@"
-    )
-  elif [[ -n $module_name && -n $( run_pip show "$module_name" ) ]]; then
-    log "Python module $module_name already installed, not upgrading."
+    python -m pip "$@"
   else
-    log "Installing Python module(s) outside virtualenv, using --user."
-
-    run_pip install --user "$@"
-  fi
-}
-
-install_pip() {
-  deactivate_virtualenv
-  if ! which pip >/dev/null; then
-    log "Installing python-pip (will need sudo privileges for that)..."
-    if [[ ${is_debian} == "true" ]]; then
-      # Need pip to install Python dependencies.
-      # http://docs.ansible.com/ansible/guide_gce.html
-      sudo apt-get install python-pip
-    elif [[ ${is_centos} == "true" ]]; then
-      # TODO: can the two commands below be done as one command? Or does the
-      # second one need to run separately because it needs to refresh the
-      # package index?
-      sudo yum install -y epel-release
-      sudo yum install -y python-pip
-    elif [[ ${is_mac} == "true" ]]; then
-      sudo easy_install pip
-    else
-      fatal "Don't know how to install pip on this OS. OSTYPE=$OSTYPE"
-    fi
-  else
-    log "It looks like pip (Python module manager) is already installed, skipping"
+    # run_python comes from yugabyte-bash-common
+    run_python -m pip "$@"
   fi
 }
 
@@ -502,10 +434,11 @@ install_ybops_package() {
   activate_virtualenv
   virtualenv_aware_log "Installing the $YBOPS_PACKAGE_NAME package"
   local user_flag=""
+  local py_exe="python"
   if ! is_virtual_env; then
     user_flag="--user"
+    py_exe=$yb_python_interpreter
   fi
-  log "Using python: $( which $PYTHON_EXECUTABLE )"
   # This is invoked outside of the source tree to install venv.
   if [[ -f "$NODE_AGENT_SRC_DIR/build.sh" ]]; then
     $NODE_AGENT_SRC_DIR/build.sh build-pymodule
@@ -514,7 +447,7 @@ install_ybops_package() {
   fi
   (
     cd "$yb_devops_home/$YBOPS_TOP_LEVEL_DIR_BASENAME"
-    $PYTHON_EXECUTABLE setup.py install $user_flag
+    $py_exe setup.py install $user_flag
     rm -rf build dist "$YBOPS_PACKAGE_NAME.egg-info"
   )
   virtualenv_aware_log "Installed the $YBOPS_PACKAGE_NAME package"
@@ -526,33 +459,6 @@ is_virtual_env() {
 
 should_use_virtual_env() {
   [[ -z ${YB_NO_VIRTUAL_ENV:-} ]]
-}
-
-detect_os() {
-  is_mac=false
-  is_linux=false
-  is_debian=false
-  is_ubuntu=false
-  is_centos=false
-
-  case $(uname) in
-    Darwin) is_mac=true ;;
-    Linux) is_linux=true ;;
-    *)
-      fatal "Unknown operating system: $(uname)"
-  esac
-
-  if [[ ${is_linux} == "true" ]]; then
-    # Detect Linux flavor
-    if [[ -f /etc/issue ]] && grep Ubuntu /etc/issue >/dev/null; then
-      is_debian=true
-      is_ubuntu=true
-    elif [[ -f /etc/redhat-release ]] && grep CentOS /etc/redhat-release > /dev/null; then
-      is_centos=true
-    fi
-    # TODO: detect other Linux flavors, including potentially non-Ubuntu Debian distributions
-    # (if we ever need it).
-  fi
 }
 
 cleanup_pexlock() {

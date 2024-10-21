@@ -51,6 +51,10 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
+# faster pip install of yb-cassandra-driver without a full compilation
+# https://docs.datastax.com/en/developer/python-driver/3.16/installation/
+export CASS_DRIVER_NO_CYTHON=1
+
 if [[ "$should_create_package" == "1" ]]; then
   log "Creating wheels package $YB_PYTHON_MODULES_PACKAGE"
   create_pymodules_package
@@ -73,15 +77,6 @@ if [[ $should_use_package == "1" && -f "$YB_PYTHON_MODULES_PACKAGE" ]]; then
   log "Found virtualenv package $YB_PYTHON_MODULES_PACKAGE"
   tar -xf $YB_PYTHON_MODULES_PACKAGE
 else
-
-  run_pip install --upgrade pip > /dev/null
-
-  # faster pip install of yb-cassandra-driver without a full compilation
-  # https://docs.datastax.com/en/developer/python-driver/3.16/installation/
-  export CASS_DRIVER_NO_CYTHON=1
-
-  pip_install -r "$FROZEN_REQUIREMENTS_FILE"
-  log "Installing ybops package"
   install_ybops_package
 
   if [[ "$use_dynamic_paths" == "1" ]]; then
@@ -104,14 +99,14 @@ else
         "of $FROZEN_REQUIREMENTS_FILE"
     # We will skip grpcio in this check, as it has addition python version requirements included in
     # the requirements.txt, and this data is not stored by pip.
-    if grep -Fvf <(run_pip freeze --all | grep -v ybops) <(egrep -v 'grpcio|protobuf' \
+    if grep -Fvf <(run_pip freeze --all | grep -v ybops) <(egrep -v 'grpcio|protobuf|YB_SHA' \
         $FROZEN_REQUIREMENTS_FILE); then
-      log_warn "WARNING: discrepancies found between the contents of '$FROZEN_REQUIREMENTS_FILE'" \
+      warn "WARNING: discrepancies found between the contents of '$FROZEN_REQUIREMENTS_FILE'" \
               "and what's installed in the virtualenv $virtualenv_dir."
-      log_error "Showing full diff output, but please ignore extra modules that were installed."
+      error "Showing full diff output, but please ignore extra modules that were installed."
       # Use "LANG=C" to enforce case-sensitive sorting.
       # https://stackoverflow.com/questions/10326933/case-sensitive-sort-unix-bash
-      diff <( LANG=C sort <"$FROZEN_REQUIREMENTS_FILE" ) \
+      diff <( grep -v YB_SHA "$FROZEN_REQUIREMENTS_FILE" | LANG=C sort ) \
           <(run_pip freeze | grep -v ybops | LANG=C sort)
       exit 1
     else
