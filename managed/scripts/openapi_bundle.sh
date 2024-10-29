@@ -35,5 +35,4 @@ popd
 
 # Call python script which takes the above generated openapi.yaml file
 # and extracts specific APIs for Public and processes other x-yba-api extensions.
-../devops/bin/run_in_virtualenv.sh pip install PyYAML==6.0.1
 ../devops/bin/run_in_virtualenv.sh python3 ./openapi_process_vendor_ext.py
