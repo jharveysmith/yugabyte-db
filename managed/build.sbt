@@ -397,7 +397,7 @@ ybLogTask := {
 }
 
 buildVenv / fileInputs += baseDirectory.value.toGlob /
-    "devops/python3_requirements*.txt"
+    "devops/requirements*.txt"
 buildVenv := {
   if (buildVenv.inputFileChanges.hasChanges) {
     ybLog("Building virtual env...")

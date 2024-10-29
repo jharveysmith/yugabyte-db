@@ -10,6 +10,8 @@
 
 . "${BASH_SOURCE%/*}/common.sh"
 
+#### DEBUG info
+export YB_VERBOSE=true
 activate_virtualenv
 
 "$@"

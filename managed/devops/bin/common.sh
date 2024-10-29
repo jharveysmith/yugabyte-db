@@ -261,30 +261,6 @@ activate_virtualenv() {
 
   yb_activate_virtualenv "${yb_devops_home}"
 
-  if [[ ! $virtualenv_dir = */$YB_VIRTUALENV_BASENAME ]]; then
-    fatal "Internal error: virtualenv_dir ('$virtualenv_dir') must end" \
-          "with YB_VIRTUALENV_BASENAME ('$YB_VIRTUALENV_BASENAME')"
-  fi
-  if [[ ! -d $virtualenv_dir ]]; then
-    # We need to be using system python to install the virtualenv module or create a new virtualenv.
-    deactivate_virtualenv
-
-    (
-      set -x
-      cd "${virtualenv_dir%/*}"
-      $PYTHON_EXECUTABLE -m venv "$YB_VIRTUALENV_BASENAME"
-    )
-  elif [[ ${is_linux} == "true" ]]; then
-    deactivate_virtualenv
-  fi
-
-  if [[ ! -f "$virtualenv_dir/bin/activate" ]]; then
-    fatal "File '$virtualenv_dir/bin/activate' does not exist."
-  fi
-
-  set +u
-  . "$virtualenv_dir"/bin/activate
-  set -u
   export SITE_PACKAGES=$(python -c "import sysconfig; print(sysconfig.get_path('purelib'))")
   PYTHON_EXECUTABLE="python"
   log "Using virtualenv python executable now."
