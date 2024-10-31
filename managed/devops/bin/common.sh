@@ -114,10 +114,8 @@ initialize_yugabyte_bash_common
 # -------------------------------------------------------------------------------------------------
 # Constants
 # -------------------------------------------------------------------------------------------------
-readonly PYTHON3_EXECUTABLES=('python3.11' 'python3' 'python3.10')
-readonly PYTHON3_VERSIONS=('python3.11' 'python3.10')
-readonly LINUX_PLATFORMS=('manylinux2014_x86_64-cp-310-cp310' 'manylinux2014_x86_64-cp-311-cp311')
-readonly MACOS_PLATFORMS=('macosx-10.10-x86_64-cp-310-cp310' 'macosx-10.10-x86_64-cp-311-cp311')
+readonly MACOS_PLATFORMS=('macosx-10.10-x86_64-cp-38-cp38' 'macosx-10.10-x86_64-cp-39-cp39' \
+                         'macosx-10.10-x86_64-cp-310-cp310' 'macosx-10.10-x86_64-cp-311-cp311')
 DOCKER_PEX_IMAGE_NAME="yba-devops-pex-builder"
 DOCKER_VENV_IMAGE_NAME="yba-devops-venv-builder"
 PYTHON_EXECUTABLE=""

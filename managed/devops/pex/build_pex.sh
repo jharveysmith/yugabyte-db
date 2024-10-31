@@ -2,7 +2,10 @@
 
 set -e
 
-. ../bin/common.sh
+readonly PYTHON3_VERSIONS=('python3.8' 'python3.9' 'python3.10' 'python3.11')
+readonly LINUX_PLATFORMS=('manylinux2014_x86_64-cp-38-cp38' 'manylinux2014_x86_64-cp-39-cp39' \
+                         'manylinux2014_x86_64-cp-310-cp310' 'manylinux2014_x86_64-cp-311-cp311')
+
 
 # Environment variable to control the level of PEX logging printed to the console
 # when generating the PEX. Increase the number if you want more verbose logging output
@@ -152,7 +155,7 @@ while [ $# -gt 0 ]; do
 done
 
 if [[ $PYTHON_REQUIREMENTS_FILE == "" ]]; then
-  PYTHON_REQUIREMENTS_FILE="../python3_requirements_frozen.txt"
+  PYTHON_REQUIREMENTS_FILE="../requirements_frozen.txt"
   echo "No python requirements file provided. Using the default requirements file."
 fi
 
