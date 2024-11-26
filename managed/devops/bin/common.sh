@@ -30,6 +30,8 @@ if [[ -n ${YB_MANAGED_COMMON_ENV_SOURCED:-} ]]; then
 fi
 readonly YB_MANAGED_COMMON_ENV_SOURCED=1
 
+export YB_PYTHON_VERSION=${YB_PYTHON_VERSION:-3.11}
+
 # -------------------------------------------------------------------------------------------------
 # Functions used when initializing constants
 # -------------------------------------------------------------------------------------------------
