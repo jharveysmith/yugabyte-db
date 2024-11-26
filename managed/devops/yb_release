@@ -38,7 +38,7 @@ docker build -t "$DOCKER_PEX_IMAGE_NAME" .
 # Execute the build_pex.sh script inside the built docker image
 # to generate the repaired PEX.
 docker run -v "$yb_devops_home:/code" -u "$UID:$(id -g $UID)" \
-"$DOCKER_PEX_IMAGE_NAME" -c "-r" "/code/python3_requirements_frozen.txt"
+"$DOCKER_PEX_IMAGE_NAME" -c "-r" "/code/requirements_frozen.txt"
 
 "$yb_devops_home"/yb_release.py "$@"
 rm -rf "$YB_PYTHON_MODULES_PACKAGE"

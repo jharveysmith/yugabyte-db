@@ -73,7 +73,7 @@ echo "Starting make"  > /dev/stderr
 make VERSION="${VERSION}" PACKAGE_NAME="${PACKAGE_NAME}" GOOS="${GOOS}" GOARCH="${GOARCH}"
 echo "Completed make"  > /dev/stderr
 
-activate_virtualenv
+install_ybops_package # this implicitly call activate_virtualenv and then installs ybops
 echo "Invoking yb_release.py" > /dev/stderr
 "$( dirname "${BASH_SOURCE[0]}" )"/yb_release.py --package "${PACKAGE_NAME}" \
                                                  --destination "${destination}"

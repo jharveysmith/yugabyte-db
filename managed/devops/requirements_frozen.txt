@@ -1,4 +1,4 @@
-# YB_SHA: a700566149c412b9d5df88e4385fe66f9640a91c33821f2c7e341f41f3f240e4
+# YB_SHA: 548928ef2ab739cd565a2006ee5370de81e830b18d8f48a2e7b3256a1ff56c8c
 adal==1.2.7
 ansible==9.2.0
 ansible-core==2.16.13
@@ -11,7 +11,7 @@ azure-mgmt-core==1.5.0
 azure-mgmt-network==19.3.0
 azure-mgmt-privatedns==1.0.0
 azure-mgmt-resource==19.0.0
-bcrypt==4.2.0
+bcrypt==4.2.1
 boto==2.49.0
 boto3==1.34.23
 botocore==1.34.23
@@ -27,10 +27,9 @@ fabric==2.2.1
 geomet==0.2.1.post1
 google-api-core==1.22.0
 google-api-python-client==1.10.0
-googleapis-common-protos==1.66.0
 google-auth==1.19.2
 google-auth-httplib2==0.2.0
-googleapis-common-protos==1.65.0
+googleapis-common-protos==1.66.0
 grpcio==1.65.4
 grpcio-tools==1.65.4
 httplib2==0.22.0
@@ -41,7 +40,7 @@ Jinja2==3.0.3
 jmespath==1.0.1
 MarkupSafe==2.0.1
 mitogen==0.2.9
-msal==1.31.0
+msal==1.31.1
 msal-extensions==0.3.1
 msrest==0.7.1
 msrestazure==0.6.4.post1
@@ -56,7 +55,7 @@ psycopg2==2.9.10
 pyasn1==0.6.1
 pyasn1_modules==0.4.1
 pycparser==2.22
-PyJWT==2.9.0
+PyJWT==2.10.0
 PyNaCl==1.5.0
 pyparsing==3.2.0
 python-dateutil==2.8.2
@@ -73,5 +72,4 @@ six==1.16.0
 typing_extensions==4.12.2
 uritemplate==3.0.1
 urllib3==2.0.7
-wheel==0.45.0
 yb-cassandra-driver==3.29.1.1
