@@ -2,9 +2,8 @@
 
 set -e
 
-readonly PYTHON3_VERSIONS=('python3.8' 'python3.9' 'python3.10' 'python3.11')
-readonly LINUX_PLATFORMS=('manylinux2014_x86_64-cp-38-cp38' 'manylinux2014_x86_64-cp-39-cp39' \
-                         'manylinux2014_x86_64-cp-310-cp310' 'manylinux2014_x86_64-cp-311-cp311')
+readonly PYTHON3_VERSIONS=('python3.10' 'python3.11')
+readonly LINUX_PLATFORMS=('manylinux2014_x86_64-cp-310-cp310' 'manylinux2014_x86_64-cp-311-cp311')
 
 
 # Environment variable to control the level of PEX logging printed to the console
