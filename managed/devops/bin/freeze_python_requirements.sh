@@ -37,7 +37,7 @@ activate_virtualenv
 
 log_empty_line
 log "Changes for $FROZEN_REQUIREMENTS_FILE"
-git diff "requirements_frozen.txt" | cat
+git --no-pager diff "requirements_frozen.txt"
 log_empty_line
 log "Requirements successfully frozen"
 
