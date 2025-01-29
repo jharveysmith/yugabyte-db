@@ -203,8 +203,12 @@ class ReleaseUtil:
         """
         If path is relative treat it as a path within repo and make it absolute.
         """
-        if not path.startswith('/'):
+        if path.startswith('http'):
+          path = [path]
+        else:
+          if not (path.startswith('/'):
             path = os.path.join(YB_SRC_ROOT, path)
+          path = glob.glob(path)
         return path
 
     def create_distribution(self, distribution_dir: str) -> None:
@@ -227,8 +231,7 @@ class ReleaseUtil:
             for elem in self.release_manifest[dir_from_manifest]:
                 if not elem:
                     continue
-                elem = self.repo_expand_path(elem)
-                files = glob.glob(elem)
+                files = self.repo_expand_path(elem)
                 for file_path in files:
                     copy_deep(file_path,
                               os.path.join(current_dest_dir, os.path.basename(file_path)))
