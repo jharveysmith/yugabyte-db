@@ -199,17 +199,18 @@ class ReleaseUtil:
                 for i in range(len(values)):
                     values[i] = self.expand_value(values[i])
 
-    def repo_expand_path(self, path: str) -> str:
+    def repo_expand_path(self, path: str) -> List[str]:
         """
         If path is relative treat it as a path within repo and make it absolute.
         """
+        return_path = []
         if path.startswith('http'):
-          path = [path]
+            return_path = [path]
         else:
-          if not (path.startswith('/'):
-            path = os.path.join(YB_SRC_ROOT, path)
-          path = glob.glob(path)
-        return path
+            if not path.startswith('/'):
+                path = os.path.join(YB_SRC_ROOT, path)
+            return_path = glob.glob(path)
+        return return_path
 
     def create_distribution(self, distribution_dir: str) -> None:
         """This method would read the release_manifest and traverse through the
