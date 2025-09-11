@@ -35,6 +35,12 @@ Options:
 EOT
 }
 
+get_version_str() {
+  local gitsha=$(git rev-parse HEAD)
+  local version=$(<version.txt)
+  echo "${version%%-b0}-${gitsha}-centos-$(uname -m)"
+}
+
 export DEVOPS_HOME="${BASH_SOURCE%/*}"/../devops
 
 . "$DEVOPS_HOME/bin/"/common.sh
@@ -50,8 +56,8 @@ fi
 PACKAGES="packages"
 THIRDPARTY="thirdparty"
 THIRDPARTY_TARGZ="thirdparty-deps.tar.gz"
-PACKAGE_TARGZ="yugabundle_support.tar.gz"
-destination=""
+PACKAGE_TARGZ="yugabundle_support-$(get_version_str).tar.gz"
+destination="${BASH_SOURCE%/*}/../../build"
 package_path=$yb_support_home/$PACKAGES
 
 while [ $# -gt 0 ]; do
@@ -99,5 +105,5 @@ tar -czvf $PACKAGE_TARGZ $PACKAGES
 # Remove generated thirdparty tar.gz
 rm "$package_path/$THIRDPARTY_TARGZ"
 
-activate_virtualenv
-"$( dirname "${BASH_SOURCE[0]}" )"/yb_release.py --package $PACKAGE_TARGZ --destination $destination
+set -x
+cp "$PACKAGE_TARGZ" "$destination"
